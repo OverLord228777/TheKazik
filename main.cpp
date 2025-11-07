@@ -7,6 +7,7 @@
 #include "menu.h"
 #include "Kazik.h" 
 #include "About.h"
+#include "SlotMachines.h"
 
 int main() {
 
@@ -14,16 +15,14 @@ int main() {
 
 	// Загрузка шрифта
 	sf::Font font;
-	if (!font.loadFromFile("Fonts/firstFont.ttf")) {
-		return 1;
-	}
+	if (!font.loadFromFile("Fonts/firstFont.ttf")) return 1;
+
 
 	// Иконка игры
 
 	sf::Image icon;
-	if (!icon.loadFromFile("Image/icon.png")) {
-		return 1;
-	}
+	if (!icon.loadFromFile("Image/icon.png")) return 1;
+
 
 	window.setIcon(32, 32, icon.getPixelsPtr());
 
@@ -51,7 +50,7 @@ int main() {
 	sf::RectangleShape GameBackground(sf::Vector2f(1280, 720));
 	GameBackground.setTexture(&textureBoard);
 
-	sf::RectangleShape GameBackground2(sf::Vector2f(1281, 720));
+	sf::RectangleShape GameBackground2(sf::Vector2f(1280, 720));
 	GameBackground2.setTexture(&textureBoard);
 	GameBackground2.setPosition(sf::Vector2f(1280, 0));
 
@@ -124,10 +123,110 @@ int main() {
 
 		}
 		else if (currentState == SLOT_MACHINES) {
+			static bool inputCompleted = false;
+			static bool keyPressed = false;
+			static std::string inputBet;
+			static sf::Text inputBetText;
+			static UserInput userInput(font, currentState);
+			Button Back(sf::Vector2f(100, 200), sf::Vector2f(200, 50), "Back", font);
+			Button Next(sf::Vector2f(100, 480), sf::Vector2f(200, 50), "Next", font);
+
+			// Инициализация текстовых полей при первом входе в состояние
+			static bool initialized = false;
+			if (!initialized) {
+				inputBetText.setFont(font);
+				inputBetText.setCharacterSize(24);
+				inputBetText.setFillColor(sf::Color::White);
+				inputBetText.setPosition(1000, 140);
 
 
+				inputCompleted = false;
+				inputBet = "";
+				initialized = true;
+			}
 
+			if (event.type != sf::Event::TextEntered) keyPressed = false;
 
+			// Обработка ввода в реальном времени
+			if (!inputCompleted) {
+				// Обработка текстового ввода для ставки
+				if (event.type == sf::Event::TextEntered && inputState == Bet && !keyPressed) {
+					keyPressed = true;
+					if (event.text.unicode == 8) { // Backspace
+						if (!inputBet.empty()) inputBet.pop_back();
+					}
+					else if (event.text.unicode == 13) { // Enter - переход к вводу числа
+						// Пустая обработка для Enter
+					}
+					else if (event.text.unicode < 128 && event.text.unicode != 13) {
+						inputBet.push_back(event.text.unicode);
+
+					}
+					inputBetText.setString(inputBet);
+				}
+
+				// Крутим барабаны
+
+				if (inputState == Done) { // Enter - завершение ввода
+					sf::Texture textureMachine;
+					textureMachine.loadFromFile("Image/SlotMachines.png");
+
+					sf::RectangleShape MachineBackground(sf::Vector2f(1280, 720));
+					MachineBackground.setTexture(&textureMachine);
+					MachineBackground.setPosition(sf::Vector2f(0, 120));
+					inputCompleted = true;
+
+					Slots slot1, slot2, slot3;
+
+					// Выполнение игры в рулетку
+					int Bet = std::stoi(inputBet);
+
+					slot1 = randomSlot();
+					slot2 = randomSlot();
+					slot3 = randomSlot();
+
+					int Schrodinger = slotsCompare(slot1, slot2, slot3, Bet); // Ну типа тут как кот Шредингера: вроде и победил или проиграл
+					if (Schrodinger) DoomFace.loadFromFile("Image/happySmile.png");
+					else DoomFace.loadFromFile("Image/sadSmile.png");
+
+					balance += Schrodinger;
+					// Обновление баланса
+					balanceLabel = Balance(font, balance);
+
+					window.draw(MachineBackground);
+				}
+
+				// Отрисовка текущего состояния ввода
+				userInput.draw(window);
+				window.draw(inputBetText);
+			}
+
+			// После завершения ввода - кнопка для возврата в меню
+			if (Back.isMouseOver(window)) {
+				Back.setColor(sf::Color(100, 100, 100));
+				if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+
+					currentState = MENU;
+					inputCompleted = false;
+					initialized = false;
+					inputBet.clear();
+				}
+			}
+			else {
+				Back.setColor(sf::Color(70, 70, 70));
+			}
+
+			if (Next.isMouseOver(window)) {
+				Next.setColor(sf::Color(100, 100, 100));
+				if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+
+					inputState = Done;
+
+				}
+			}
+
+			Back.draw(window);
+			Next.draw(window);
 		}
 		else if (currentState == ROULETTE) {
 			static bool inputCompleted = false;
@@ -252,7 +351,8 @@ int main() {
 		}
 
 		else if (currentState == SETTINGS) {
-
+			// Емае че в настройках делать
+			currentState = MENU;
 		}
 		else if (currentState == ABOUT) {
 			About about(font);
@@ -280,12 +380,7 @@ int main() {
 		pos = GameBackground2.getPosition();
 		if (pos.x < -1280) GameBackground2.setPosition(1280, pos.y);
 
-
-
 		window.display();
-
-
-
 
 	}
 	window.close();

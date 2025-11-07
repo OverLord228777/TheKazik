@@ -8,7 +8,7 @@
 
 enum GameState { MENU, SLOT_MACHINES, ROULETTE, SETTINGS, ABOUT, EXIT };
 
-enum InputState { Bet, Number };
+enum InputState { Bet, Number, Done };
 InputState inputState = Bet;
 
 class Balance {
