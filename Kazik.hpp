@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-#include "Buttons.h"
+#include "Buttons.hpp"
 
 enum GameState { MENU, SLOT_MACHINES, ROULETTE, SETTINGS, ABOUT, EXIT };
 

@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 
-#include "Buttons.h"
+#include "Buttons.hpp"
 
 class Menu {
 public:

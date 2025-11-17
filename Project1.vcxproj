@@ -163,12 +163,12 @@
     <Font Include="Fonts\firstFont.ttf" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="About.h" />
-    <ClInclude Include="Buttons.h" />
-    <ClInclude Include="Kazik.h" />
-    <ClInclude Include="menu.h" />
-    <ClInclude Include="Roulette.h" />
-    <ClInclude Include="SlotMachines.h" />
+    <ClInclude Include="About.hpp" />
+    <ClInclude Include="Buttons.hpp" />
+    <ClInclude Include="Kazik.hpp" />
+    <ClInclude Include="menu.hpp" />
+    <ClInclude Include="Roulette.hpp" />
+    <ClInclude Include="SlotMachines.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

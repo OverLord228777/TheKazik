@@ -3,22 +3,40 @@
 #include <string>
 #include <cstdlib>
 #include <ctime>
+#include <array>
+#include <algorithm>
+#include <cctype>
+#include <exception>
 
-#include "menu.h"
-#include "Kazik.h" 
-#include "About.h"
-#include "SlotMachines.h"
+#include "menu.hpp"
+#include "Kazik.hpp" 
+#include "About.hpp"
+#include "SlotMachines.hpp"
+
+bool tryParseUnsignedInt(const std::string& value, int& result) {
+	if (value.empty()) return false;
+	if (!std::all_of(value.begin(), value.end(), [](unsigned char ch) { return std::isdigit(ch); })) {
+		return false;
+	}
+	try {
+		result = std::stoi(value);
+	}
+	catch (const std::exception&) {
+		return false;
+	}
+	return true;
+}
 
 int main() {
 
 	sf::RenderWindow window(sf::VideoMode(1280, 720), "The Kazik");
 
-	// Загрузка шрифта
+	// Load primary UI font
 	sf::Font font;
 	if (!font.loadFromFile("Fonts/firstFont.ttf")) return 1;
 
 
-	// Иконка игры
+	// Load window icon
 
 	sf::Image icon;
 	if (!icon.loadFromFile("Image/icon.png")) return 1;
@@ -26,14 +44,14 @@ int main() {
 
 	window.setIcon(32, 32, icon.getPixelsPtr());
 
-	// Создание меню и значение баланса
+	// Initialize player balance and HUD labels
 
 	int balance = 1000;
 
 	Menu menu(font);
 	Balance balanceLabel(font, balance);
 
-	// Панель игровая
+	// Load info panel texture
 
 	sf::Texture TexturInfoPanel;
 	TexturInfoPanel.loadFromFile("Image/Panel.png");
@@ -42,7 +60,7 @@ int main() {
 	GameInfoPanel.setTexture(&TexturInfoPanel);
 	GameInfoPanel.setPosition(sf::Vector2f(0, 0));
 
-	// Игровое меню
+	// Prepare scrolling board background
 
 	sf::Texture textureBoard;
 	textureBoard.loadFromFile("Image/Board.png");
@@ -54,18 +72,18 @@ int main() {
 	GameBackground2.setTexture(&textureBoard);
 	GameBackground2.setPosition(sf::Vector2f(1280, 0));
 
-	// Табло игрока 
+	// Configure Doom face portrait slot
 
 	sf::Texture DoomFace;
 
 	sf::RectangleShape DoomFaceBackground(sf::Vector2f(302, 302));
 	DoomFaceBackground.setPosition(sf::Vector2f(978, 418));
 
-	// Состояния игры
+	// Track current high-level game state
 
 	GameState currentState = MENU;
 
-	// Игровой цикл
+	// Background animation helpers
 	sf::Vector2f pos;
 	sf::Clock clock;
 	float time;
@@ -84,7 +102,7 @@ int main() {
 
 		window.clear();
 
-		// Отрисовка
+		// Draw static background layers
 
 
 		window.draw(GameBackground);
@@ -94,7 +112,7 @@ int main() {
 		window.draw(DoomFaceBackground);
 		balanceLabel.draw(window);
 
-		// Обработка состояний игры
+		// Handle what to show based on current state
 		if (currentState == MENU) {
 			if (balance < 300) DoomFace.loadFromFile("Image/angrySmile.png");
 			else if (balance > 10000) DoomFace.loadFromFile("Image/alegSmile.png");
@@ -103,19 +121,19 @@ int main() {
 
 			int menuResult = menu.handleInput(window);
 
-			if (menuResult == 1) { // Игровые автоматы
+			if (menuResult == 1) { // Slot machines
 				currentState = SLOT_MACHINES;
 			}
-			else if (menuResult == 2) { // Рулетка
+			else if (menuResult == 2) { // Roulette
 				currentState = ROULETTE;
 			}
-			else if (menuResult == 3) { // Настройки
+			else if (menuResult == 3) { // Settings
 				currentState = SETTINGS;
 			}
-			else if (menuResult == 4) { // О игре и авторе
+			else if (menuResult == 4) { // About / credits
 				currentState = ABOUT;
 			}
-			else if (menuResult == 5) { // Выход
+			else if (menuResult == 5) { // Exit
 				currentState = EXIT;
 			}
 
@@ -130,8 +148,14 @@ int main() {
 			static UserInput userInput(font, currentState);
 			Button Back(sf::Vector2f(100, 200), sf::Vector2f(200, 50), "Back", font);
 			Button Next(sf::Vector2f(100, 480), sf::Vector2f(200, 50), "Next", font);
+			static sf::Texture textureMachine;
+			static sf::RectangleShape MachineBackground;
+			static std::array<sf::Texture, 3> slotTextures;
+			static std::array<sf::RectangleShape, 3> slotShapes;
+			static bool slotResultReady = false;
+			static sf::Text betValidationMessage;
 
-			// Инициализация текстовых полей при первом входе в состояние
+			// One-time setup for slot machine input and visuals
 			static bool initialized = false;
 			if (!initialized) {
 				inputBetText.setFont(font);
@@ -142,66 +166,105 @@ int main() {
 
 				inputCompleted = false;
 				inputBet = "";
+				slotResultReady = false;
+
+				MachineBackground.setSize(sf::Vector2f(1280.f, 720.f));
+				MachineBackground.setPosition(sf::Vector2f(0.f, 120.f));
+
+				slotShapes[0].setSize(sf::Vector2f(150.f, 185.f));
+				slotShapes[1].setSize(sf::Vector2f(150.f, 185.f));
+				slotShapes[2].setSize(sf::Vector2f(150.f, 185.f));
+
+				slotShapes[0].setPosition(sf::Vector2f(340.f, 214.f));
+				slotShapes[1].setPosition(sf::Vector2f(531.f, 216.f));
+				slotShapes[2].setPosition(sf::Vector2f(723.f, 213.f));
+
+				betValidationMessage.setFont(font);
+				betValidationMessage.setCharacterSize(20);
+				betValidationMessage.setFillColor(sf::Color::Red);
+				betValidationMessage.setPosition(1000.f, 110.f);
+				betValidationMessage.setString("");
 				initialized = true;
 			}
 
 			if (event.type != sf::Event::TextEntered) keyPressed = false;
 
-			// Обработка ввода в реальном времени
+			// Handle input while in the slot machine state
 			if (!inputCompleted) {
-				// Обработка текстового ввода для ставки
+				// Capture bet amount characters
 				if (event.type == sf::Event::TextEntered && inputState == Bet && !keyPressed) {
 					keyPressed = true;
 					if (event.text.unicode == 8) { // Backspace
 						if (!inputBet.empty()) inputBet.pop_back();
-					}
-					else if (event.text.unicode == 13) { // Enter - переход к вводу числа
-						// Пустая обработка для Enter
 					}
 					else if (event.text.unicode < 128 && event.text.unicode != 13) {
 						inputBet.push_back(event.text.unicode);
 
 					}
 					inputBetText.setString(inputBet);
+					betValidationMessage.setString("");
+					slotResultReady = false;
 				}
 
-				// Крутим барабаны
+				// Validate bet and spin reels
 
-				if (inputState == Done) { // Enter - завершение ввода
-					sf::Texture textureMachine;
-					textureMachine.loadFromFile("Image/SlotMachines.png");
+				if (inputState == Done) {
+					int Bet = 0;
+					if (!tryParseUnsignedInt(inputBet, Bet) || Bet <= 0) {
+						betValidationMessage.setString("Enter a positive numeric bet");
+						slotResultReady = false;
+					}
+					else if (!textureMachine.loadFromFile("Image/SlotMachines.png")) {
+						betValidationMessage.setString("SlotMachines.png missing");
+						slotResultReady = false;
+					}
+					else {
+						MachineBackground.setTexture(&textureMachine);
 
-					sf::RectangleShape MachineBackground(sf::Vector2f(1280, 720));
-					MachineBackground.setTexture(&textureMachine);
-					MachineBackground.setPosition(sf::Vector2f(0, 120));
-					inputCompleted = true;
+						Slots slot1 = randomSlot();
+						Slots slot2 = randomSlot();
+						Slots slot3 = randomSlot();
 
-					Slots slot1, slot2, slot3;
+						slotTextures[0].loadFromFile(getSlotPNG(slot1));
+						slotTextures[1].loadFromFile(getSlotPNG(slot2));
+						slotTextures[2].loadFromFile(getSlotPNG(slot3));
 
-					// Выполнение игры в рулетку
-					int Bet = std::stoi(inputBet);
+						slotShapes[0].setTexture(&slotTextures[0]);
+						slotShapes[1].setTexture(&slotTextures[1]);
+						slotShapes[2].setTexture(&slotTextures[2]);
 
-					slot1 = randomSlot();
-					slot2 = randomSlot();
-					slot3 = randomSlot();
+						bool win = true;
+						int Schrodinger = slotsCompare(slot1, slot2, slot3, Bet, &win); // Determine payout; positive means win, negative means loss
+						if (win) DoomFace.loadFromFile("Image/happySmile.png");
+						else DoomFace.loadFromFile("Image/sadSmile.png");
 
-					int Schrodinger = slotsCompare(slot1, slot2, slot3, Bet); // Ну типа тут как кот Шредингера: вроде и победил или проиграл
-					if (Schrodinger) DoomFace.loadFromFile("Image/happySmile.png");
-					else DoomFace.loadFromFile("Image/sadSmile.png");
-
-					balance += Schrodinger;
-					// Обновление баланса
-					balanceLabel = Balance(font, balance);
-
-					window.draw(MachineBackground);
+						balance += Schrodinger;
+						// Refresh balance label after the result
+						balanceLabel = Balance(font, balance);
+						betValidationMessage.setString("");
+						slotResultReady = true;
+						inputBet.clear();
+						inputBetText.setString("");
+					}
+					inputState = InputState::Bet;
 				}
 
-				// Отрисовка текущего состояния ввода
+				// Draw slot input controls
 				userInput.draw(window);
 				window.draw(inputBetText);
+				if (!betValidationMessage.getString().isEmpty()) {
+					window.draw(betValidationMessage);
+				}
 			}
 
-			// После завершения ввода - кнопка для возврата в меню
+			if (slotResultReady) {
+				window.draw(MachineBackground);
+				for (const auto& slotShape : slotShapes) {
+					window.draw(slotShape);
+				}
+			}
+
+			// Back button hover/press handling
 			if (Back.isMouseOver(window)) {
 				Back.setColor(sf::Color(100, 100, 100));
 				if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
@@ -210,6 +273,8 @@ int main() {
 					inputCompleted = false;
 					initialized = false;
 					inputBet.clear();
+					slotResultReady = false;
+					betValidationMessage.setString("");
 				}
 			}
 			else {
@@ -234,10 +299,11 @@ int main() {
 			static std::string inputBet, inputNumber;
 			static sf::Text inputBetText, inputNumberText;
 			static UserInput userInput(font, currentState);
+			static sf::Text rouletteValidationMessage;
 			Button Back(sf::Vector2f(100, 200), sf::Vector2f(200, 50), "Back", font);
 			Button Next(sf::Vector2f(100, 480), sf::Vector2f(200, 50), "Next", font);
 
-			// Инициализация текстовых полей при первом входе в состояние
+			// One-time setup for roulette input and visuals
 			static bool initialized = false;
 			if (!initialized) {
 				inputBetText.setFont(font);
@@ -253,71 +319,95 @@ int main() {
 				inputCompleted = false;
 				inputBet = "";
 				inputNumber = "";
+				rouletteValidationMessage.setFont(font);
+				rouletteValidationMessage.setCharacterSize(20);
+				rouletteValidationMessage.setFillColor(sf::Color::Red);
+				rouletteValidationMessage.setPosition(1000.f, 100.f);
+				rouletteValidationMessage.setString("");
 				initialized = true;
 			}
 
 			if (event.type != sf::Event::TextEntered) keyPressed = false;
 
-			// Обработка ввода в реальном времени
+			// Handle input while in the roulette state
 			if (!inputCompleted) {
-				// Обработка текстового ввода для ставки
+				// Capture roulette bet characters
 				if (event.type == sf::Event::TextEntered && inputState == Bet && !keyPressed) {
 					keyPressed = true;
 					if (event.text.unicode == 8) { // Backspace
 						if (!inputBet.empty()) inputBet.pop_back();
 					}
-					else if (event.text.unicode == 13) { // Enter - переход к вводу числа
-						// Пустая обработка для Enter
+					else if (event.text.unicode == 13) { // Enter - advance to number input
+						// Reserved hook for Enter-specific handling
 					}
 					else if (event.text.unicode < 128 && event.text.unicode != 13) {
 						inputBet.push_back(event.text.unicode);
 
 					}
 					inputBetText.setString(inputBet);
+					rouletteValidationMessage.setString("");
 				}
 
-				// Обработка текстового ввода для числа (только после ввода ставки)
+				// Capture roulette number characters (after bet entered)
 				if (inputState == Number && event.type == sf::Event::TextEntered && !keyPressed) {
 					keyPressed = true;
 					if (event.text.unicode == 8) { // Backspace
 						if (!inputNumber.empty()) inputNumber.pop_back();
 					}
-					else if (event.text.unicode == 13) { // Enter - завершение ввода
+					else if (event.text.unicode == 13) { // Enter - finalize roulette guess
 						if (!inputNumber.empty()) {
 							inputCompleted = true;
 
-							// Выполнение игры в рулетку
-							int Bet = std::stoi(inputBet);
-							int num = std::stoi(inputNumber);
-							int random_number = rand() % 9 + 1;
+							// Validate bet and chosen number
+							int Bet = 0;
+							int num = 0;
+							bool betValid = tryParseUnsignedInt(inputBet, Bet) && Bet > 0;
+							bool numberValid = tryParseUnsignedInt(inputNumber, num) && num >= 0 && num <= 10;
 
-
-							if (random_number == num) {
-								balance += Bet;
-								DoomFace.loadFromFile("Image/happySmile.png");
+							if (!betValid) {
+								rouletteValidationMessage.setString("Enter a positive numeric bet");
+								inputCompleted = false;
+							}
+							else if (!numberValid) {
+								rouletteValidationMessage.setString("Number must be 0-10");
+								inputCompleted = false;
 							}
 							else {
-								balance -= Bet;
-								DoomFace.loadFromFile("Image/sadSmile.png");
-							}
+								int random_number = rand() % 9 + 1;
 
-							// Обновление баланса
-							balanceLabel = Balance(font, balance);
+								if (random_number == num) {
+									balance += Bet;
+									DoomFace.loadFromFile("Image/happySmile.png");
+								}
+								else {
+									balance -= Bet;
+									DoomFace.loadFromFile("Image/sadSmile.png");
+								}
+
+								rouletteValidationMessage.setString("");
+
+								// Refresh balance label after roulette result
+								balanceLabel = Balance(font, balance);
+							}
 						}
 					}
 					else if (event.text.unicode < 128 && event.text.unicode != 13) {
 						inputNumber.push_back(event.text.unicode);
 					}
 					inputNumberText.setString(inputNumber);
+					rouletteValidationMessage.setString("");
 				}
 
-				// Отрисовка текущего состояния ввода
+				// Draw roulette input controls
 				userInput.draw(window);
 				window.draw(inputBetText);
 				window.draw(inputNumberText);
+				if (!rouletteValidationMessage.getString().isEmpty()) {
+					window.draw(rouletteValidationMessage);
+				}
 			}
 
-			// После завершения ввода - кнопка для возврата в меню
+			// Back button hover/press handling
 			if (Back.isMouseOver(window)) {
 				Back.setColor(sf::Color(100, 100, 100));
 				if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
@@ -327,6 +417,7 @@ int main() {
 					initialized = false;
 					inputBet.clear();
 					inputNumber.clear();
+					rouletteValidationMessage.setString("");
 				}
 			}
 			else {
@@ -351,7 +442,7 @@ int main() {
 		}
 
 		else if (currentState == SETTINGS) {
-			// Емае че в настройках делать
+			// Settings screen not implemented yet; fallback to menu
 			currentState = MENU;
 		}
 		else if (currentState == ABOUT) {
@@ -371,7 +462,7 @@ int main() {
 
 		DoomFaceBackground.setTexture(&DoomFace);
 
-		// Движение фона
+		// Animate the parallax background
 
 		GameBackground.move(-0.2 * time, 0);
 		pos = GameBackground.getPosition();

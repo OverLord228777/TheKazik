@@ -41,9 +41,21 @@ std::string getSlotPNG(Slots slot) {
 	}
 }
 
-int slotsCompare(Slots slot1, Slots slot2, Slots slot3, int bet) {
-	if (slot1 == slot2 && slot2 == slot3) return bet * 2;
-	else if (slot1 == slot7 && slot2 == slot7 && slot3 == slot7) return bet * 5;
-	else if (slot1 == slot2 || slot2 == slot3 || slot1 == slot3) return bet;
-	else return -bet;
+int slotsCompare(Slots slot1, Slots slot2, Slots slot3, int bet, bool* win) {
+	if (slot1 == slot2 && slot2 == slot3) {
+		//*win = true;  
+		return bet * 2;
+	}
+	else if (slot1 == slot7 && slot2 == slot7 && slot3 == slot7) { 
+		//*win = true;
+		return bet * 5; 
+	}
+	else if (slot1 == slot2 || slot2 == slot3 || slot1 == slot3) { 
+		//*win = true;
+		return bet; 
+	}
+	else { 
+		*win = false;
+		return -bet; 
+	}
 }

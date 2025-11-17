@@ -83,22 +83,22 @@
     <Font Include="Fonts\firstFont.ttf" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="menu.h">
+    <ClInclude Include="menu.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Buttons.h">
+    <ClInclude Include="Buttons.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Kazik.h">
+    <ClInclude Include="Kazik.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Roulette.h">
+    <ClInclude Include="Roulette.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SlotMachines.h">
+    <ClInclude Include="SlotMachines.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="About.h">
+    <ClInclude Include="About.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
