@@ -1,4 +1,6 @@
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
+
 #include <vector>
 #include <string>
 #include <cstdlib>
@@ -8,10 +10,12 @@
 #include <cctype>
 #include <exception>
 
-#include "menu.hpp"
-#include "Kazik.hpp" 
-#include "About.hpp"
-#include "SlotMachines.hpp"
+#include "Headers/menu.hpp"
+#include "Headers/Kazik.hpp" 
+#include "Headers/About.hpp"
+#include "Headers/SlotMachines.hpp"
+#include "Headers/musik.hpp"
+#include "Headers/Settings.hpp"
 
 bool tryParseUnsignedInt(const std::string& value, int& result) {
 	if (value.empty()) return false;
@@ -28,8 +32,9 @@ bool tryParseUnsignedInt(const std::string& value, int& result) {
 }
 
 int main() {
-
+	std::srand(static_cast<unsigned int>(std::time(nullptr)));
 	sf::RenderWindow window(sf::VideoMode(1280, 720), "The Kazik");
+	window.setFramerateLimit(60);
 
 	// Load primary UI font
 	sf::Font font;
@@ -40,7 +45,6 @@ int main() {
 
 	sf::Image icon;
 	if (!icon.loadFromFile("Image/icon.png")) return 1;
-
 
 	window.setIcon(32, 32, icon.getPixelsPtr());
 
@@ -88,6 +92,16 @@ int main() {
 	sf::Clock clock;
 	float time;
 
+	// Music 
+
+	KazikMusic music;
+	float volume = 50.f;
+	std::string musicName = "Govno";
+	if (!music.load("Music/Govno.ogg")) {
+		return -1;
+	}
+	music.play();
+
 	while (window.isOpen()) {
 		if (balance <= 0) break;
 		sf::Event event;
@@ -100,16 +114,16 @@ int main() {
 				window.close();
 		}
 
+		
+
 		window.clear();
 
 		// Draw static background layers
-
 
 		window.draw(GameBackground);
 		window.draw(GameBackground2);
 		window.draw(GameInfoPanel);
 
-		window.draw(DoomFaceBackground);
 		balanceLabel.draw(window);
 
 		// Handle what to show based on current state
@@ -160,7 +174,7 @@ int main() {
 			if (!initialized) {
 				inputBetText.setFont(font);
 				inputBetText.setCharacterSize(24);
-				inputBetText.setFillColor(sf::Color::White);
+				inputBetText.setFillColor(sf::Color::Blue);
 				inputBetText.setPosition(1000, 140);
 
 
@@ -169,15 +183,15 @@ int main() {
 				slotResultReady = false;
 
 				MachineBackground.setSize(sf::Vector2f(1280.f, 720.f));
-				MachineBackground.setPosition(sf::Vector2f(0.f, 120.f));
+				MachineBackground.setPosition(sf::Vector2f(0.f, 0.f));
 
 				slotShapes[0].setSize(sf::Vector2f(150.f, 185.f));
 				slotShapes[1].setSize(sf::Vector2f(150.f, 185.f));
 				slotShapes[2].setSize(sf::Vector2f(150.f, 185.f));
 
-				slotShapes[0].setPosition(sf::Vector2f(340.f, 214.f));
-				slotShapes[1].setPosition(sf::Vector2f(531.f, 216.f));
-				slotShapes[2].setPosition(sf::Vector2f(723.f, 213.f));
+				slotShapes[0].setPosition(sf::Vector2f(340.f, 270.f));
+				slotShapes[1].setPosition(sf::Vector2f(531.f, 270.f));
+				slotShapes[2].setPosition(sf::Vector2f(723.f, 273.f));
 
 				betValidationMessage.setFont(font);
 				betValidationMessage.setCharacterSize(20);
@@ -212,7 +226,7 @@ int main() {
 					int Bet = 0;
 					if (!tryParseUnsignedInt(inputBet, Bet) || Bet <= 0) {
 						betValidationMessage.setString("Enter a positive numeric bet");
-						slotResultReady = false;
+						// slotResultReady = false;
 					}
 					else if (!textureMachine.loadFromFile("Image/SlotMachines.png")) {
 						betValidationMessage.setString("SlotMachines.png missing");
@@ -308,12 +322,12 @@ int main() {
 			if (!initialized) {
 				inputBetText.setFont(font);
 				inputBetText.setCharacterSize(24);
-				inputBetText.setFillColor(sf::Color::White);
+				inputBetText.setFillColor(sf::Color::Blue);
 				inputBetText.setPosition(1000, 140);
 
 				inputNumberText.setFont(font);
 				inputNumberText.setCharacterSize(24);
-				inputNumberText.setFillColor(sf::Color::White);
+				inputNumberText.setFillColor(sf::Color::Blue);
 				inputNumberText.setPosition(1000, 200);
 
 				inputCompleted = false;
@@ -442,8 +456,47 @@ int main() {
 		}
 
 		else if (currentState == SETTINGS) {
-			// Settings screen not implemented yet; fallback to menu
-			currentState = MENU;
+			Settings settings(font);
+			bool keyPressed = false;
+			int settingsResult = settings.backInput(window);
+			int settingsNextMusik = settings.nextMusicInput(window);
+			int settingsUpMusik = settings.changeVolumeUpInput(window);
+			int settingsDownMusik = settings.changeVolumeDownInput(window);
+
+			if (settingsResult == true) {
+				currentState = MENU;
+			}
+
+			if (settingsUpMusik == true) {
+				volume += 10;
+				music.setVolume(volume);
+			}
+
+			if (settingsDownMusik == true) {
+				volume -= 10;
+				music.setVolume(volume);
+			}
+
+			// !!!!!!!
+			if (settingsNextMusik == false) keyPressed = false;
+
+			if (settingsNextMusik == true && !keyPressed) {
+				keyPressed = true;
+				music.stop();
+
+				musicName = switch_next_track();
+				if (musicName == "Govno") 
+					music.load("Music/Govno.ogg");		
+				else if (musicName == "Povorot ne tuda") 
+					music.load("Music/YuraHoi.mp3");	
+				else if (musicName == "Hava Nagila")
+					music.load("Music/HavaNagila.mp3");
+				else return -1;
+
+				music.play();
+			}
+			settings.setMusicName(musicName);
+			settings.draw(window);
 		}
 		else if (currentState == ABOUT) {
 			About about(font);
@@ -460,6 +513,7 @@ int main() {
 			break;
 		}
 
+		window.draw(DoomFaceBackground);
 		DoomFaceBackground.setTexture(&DoomFace);
 
 		// Animate the parallax background
@@ -474,6 +528,7 @@ int main() {
 		window.display();
 
 	}
+	music.stop();
 	window.close();
 	return 0;
 }

@@ -127,9 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
-  </ItemGroup>
-  <ItemGroup>
+    <None Include="Music\Govno.ogg" />
     <None Include="openal32.dll" />
     <None Include="sfml-audio-2.dll" />
     <None Include="sfml-audio-d-2.dll" />
@@ -151,6 +149,7 @@
     <Image Include="Image\icon.png" />
     <Image Include="Image\normalSmile.png" />
     <Image Include="Image\Panel.png" />
+    <Image Include="Image\Pashalki\GanyuME&amp;Keqing.png" />
     <Image Include="Image\sadSmile.png" />
     <Image Include="Image\slot7.png" />
     <Image Include="Image\slotBerry.png" />
@@ -163,12 +162,21 @@
     <Font Include="Fonts\firstFont.ttf" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="About.hpp" />
-    <ClInclude Include="Buttons.hpp" />
-    <ClInclude Include="Kazik.hpp" />
-    <ClInclude Include="menu.hpp" />
-    <ClInclude Include="Roulette.hpp" />
-    <ClInclude Include="SlotMachines.hpp" />
+    <ClInclude Include="Headers\About.hpp" />
+    <ClInclude Include="Headers\Buttons.hpp" />
+    <ClInclude Include="Headers\Kazik.hpp" />
+    <ClInclude Include="Headers\menu.hpp" />
+    <ClInclude Include="Headers\musik.hpp" />
+    <ClInclude Include="Headers\Roulette.hpp" />
+    <ClInclude Include="Headers\Settings.hpp" />
+    <ClInclude Include="Headers\SlotMachines.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="Music\HavaNagila.mp3" />
+    <Media Include="Music\YuraHoi.mp3" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
